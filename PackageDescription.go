@@ -1,0 +1,3 @@
+// Package statTest contains implementation of statistical tests.
+// TODO...
+package statTest
