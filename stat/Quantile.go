@@ -19,16 +19,16 @@ import (
 // 	g(p) = p(n - 1) + 1 - floor{p(n - 1) + 1},
 // 	and 0 <= p <= 1.
 func Quantile(x []float64, prob float64) float64 {
+	if prob < 0.0 || prob > 1.0 {
+		return math.NaN()
+	}
+
 	newX := sort.Float64Slice(x)
 	newX.Sort()
 	j := qj(x, prob)
 	gpVal := gp(x, prob)
-
-	if j > len(x)-2 {
-		return math.NaN()
-	}
-
 	quantile := (1.0-gpVal)*newX[j] + gpVal*newX[j+1]
+
 	return quantile
 }
 
