@@ -6,11 +6,24 @@ import (
 	"statTest/stat"
 )
 
+// BootstrapMeanH0 is base hypothesis for BootstrapMean test.
+const BootstrapMeanH0 = `H0: Mean(x) == Mean(y), without assumming distribution of x or y.`
+
+// BootstrapMeanSingleH0 is base hypothesis for BootstrapMeanSingle test.
+const BootstrapMeanSingleH0 = `H0: Mean(x) == u, without assumming distribution of x or its variance`
+
 // TestResult describes results of statistical test contaning p-value,
 // confidence interval and ...
 type TestResult struct {
 	H0     string
 	PValue float64
+	CI     ConfInterval
+}
+
+// ConfInterval struct represents confidence interval of statistical tests.
+type ConfInterval struct {
+	LowerBound float64
+	UpperBound float64
 }
 
 // BootstrapMean is a nonparametric statistical test for testing equality
@@ -36,15 +49,11 @@ func BootstrapMean(x, y []float64, nSim int) TestResult {
 		bootstrapT[i] = bootstrapTStat(newX, newY)
 	}
 
-	tOk := 0
-	for _, t := range bootstrapT {
-		if t >= initT {
-			tOk++
-		}
-	}
+	tOk := countOver(bootstrapT, initT)
 	pValue := float64(tOk) / float64(nSim)
 
-	return TestResult{"", pValue}
+	return TestResult{BootstrapMeanH0, pValue, ConfInterval{math.NaN(),
+		math.NaN()}}
 }
 
 // BootstrapMeanAsync is copy of BootstrapMean but simulations are run in goroutines.
@@ -52,10 +61,32 @@ func BootstrapMeanAsync(x, y []float64, nSim int) (TestResult, error) {
 	return TestResult{}, nil
 }
 
-// TODO: Implementation for single sample mean test.
-func BootstrapMeanSingle(x []float64, target float64, nSim int) TestResult {
-	// TODO
-	return TestResult{}
+// BootstrapMeanSingle ...
+func BootstrapMeanSingle(x []float64, u0, alpha float64, nSim int) TestResult {
+	bootstrapT := make([]float64, nSim)
+	xMean := stat.Mean(x)
+	xPrime := addConst(x, -1.0*xMean+u0)
+	initT := bootstrapTStatSingle(x, u0)
+
+	for i := 0; i < nSim; i++ {
+		newX := SampleRepl(xPrime)
+		bootstrapT[i] = bootstrapTStatSingle(newX, u0)
+	}
+
+	tOk := countOver(bootstrapT, initT)
+	pValue := float64(tOk) / float64(nSim)
+	ci := bootstrapMeanSingleXCI(x, bootstrapT, alpha)
+
+	return TestResult{BootstrapMeanSingleH0, pValue, ci}
+}
+
+func bootstrapMeanSingleXCI(x []float64, bootstrapT []float64,
+	alpha float64) ConfInterval {
+
+	// LowerBound =  xMean - quantile(1 - alpha, bootstrapT) * SE(x)
+	// UpperBound =  xMean - quantile(alpha, bootstrapT) * SE(x)
+
+	return ConfInterval{}
 }
 
 // Function calcTStat calculates statistic t:
@@ -72,6 +103,19 @@ func bootstrapTStat(x, y []float64) float64 {
 	yl := 1.0 / float64(len(y))
 
 	return (xMean - yMean) / math.Sqrt(xVar*xl+yVar*yl)
+}
+
+// Function bootstrapTStatSingle calculates bootstrap t-statistic for single
+// sample mean bootstrap test:
+// t = \frac{mean(x) - u0}{\sqrt{\var{x} * \frac{1}{n}}}.
+func bootstrapTStatSingle(x []float64, u0 float64) float64 {
+	if len(x) == 0 {
+		return math.NaN()
+	}
+	xMean := stat.Mean(x)
+	xVar := stat.Variance(x)
+	xl := 1.0 / float64(len(x))
+	return (xMean - u0) / math.Sqrt(xVar*xl)
 }
 
 // SampleRepl samples with replacements from given slice of float64.
@@ -94,4 +138,14 @@ func addConst(x []float64, cnst float64) []float64 {
 		newX[i] = e + cnst
 	}
 	return newX
+}
+
+func countOver(x []float64, t float64) int {
+	tOk := 0
+	for _, e := range x {
+		if e >= t {
+			tOk++
+		}
+	}
+	return tOk
 }
