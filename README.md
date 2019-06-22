@@ -23,4 +23,3 @@ If you've got `go` installed just use `go get`:
 ```sh
 go get -u github.com/DSkrzypiec/statTest
 ```
-
