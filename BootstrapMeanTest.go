@@ -61,7 +61,14 @@ func BootstrapMeanAsync(x, y []float64, nSim int) (TestResult, error) {
 	return TestResult{}, nil
 }
 
-// BootstrapMeanSingle ...
+// BootstrapMeanSingle performes single-sample bootstrap mean test for testing
+// that mean of given sample is equal to given number u0. Parameter alpha set
+// power of confidence interval and nSim states number of simulation in bootstrap
+// performed during the test. Test does not assume anything about sample x, its
+// distributions, variance etc.
+// Implementation is based on algorithm proposed by Efron and Tibshirani in 1993
+// in paper "An Introduction to the Bootstrap".
+// TODO: What about the seed?
 func BootstrapMeanSingle(x []float64, u0, alpha float64, nSim int) TestResult {
 	bootstrapT := make([]float64, nSim)
 	xMean := stat.Mean(x)
@@ -80,13 +87,27 @@ func BootstrapMeanSingle(x []float64, u0, alpha float64, nSim int) TestResult {
 	return TestResult{BootstrapMeanSingleH0, pValue, ci}
 }
 
+// Function bootstrapMeanSingleXCI calculates confidence interval for single
+// bootstrap mean test. Confidence interval is of the form:
+//
+// 	(xMean - t_{1 - alpha} * sd, xMean - t_{alpha} * sd)
+//
+// where:
+// 	xMean is mean of x
+// 	t_{a} is a-quantile of vector ts
+// 	sd is standard deviation.
 func bootstrapMeanSingleXCI(x []float64, bootstrapT []float64,
 	alpha float64) ConfInterval {
+	if alpha < 0.0 || alpha > 1.0 || math.IsNaN(alpha) || math.IsInf(alpha, 0) {
+		return ConfInterval{math.Inf(-1), math.Inf(1)}
+	}
 
-	// LowerBound =  xMean - quantile(1 - alpha, bootstrapT) * SE(x)
-	// UpperBound =  xMean - quantile(alpha, bootstrapT) * SE(x)
+	xMean := stat.Mean(x)
+	xSd := math.Sqrt(stat.Variance(x)) / math.Sqrt(float64(len(x)))
+	lower := xMean - stat.Quantile(bootstrapT, 1.0-alpha)*xSd
+	upper := xMean - stat.Quantile(bootstrapT, alpha)*xSd
 
-	return ConfInterval{}
+	return ConfInterval{lower, upper}
 }
 
 // Function calcTStat calculates statistic t:

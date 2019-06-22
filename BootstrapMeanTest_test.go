@@ -37,15 +37,15 @@ func TestUnitBootstrapMean(t *testing.T) {
 }
 
 func TestUnitBootstrapMeanSingle(t *testing.T) {
-	const n = 10000
+	const n = 1000
 	x1 := make([]float64, n)
 
 	for i := 0; i < n; i++ {
 		x1[i] = rand.Float64() * 55.0
 	}
 
-	t1 := BootstrapMeanSingle(x1, 53.50, 0.05, 1000)
-	t2 := BootstrapMeanSingle(x1, 10.0, 0.05, 1000)
+	t1 := BootstrapMeanSingle(x1, 31.50, 0.05, 100)
+	t2 := BootstrapMeanSingle(x1, 10.0, 0.05, 100)
 
 	if t1.PValue <= 0.10 {
 		t.Errorf("Expected P-Value > 0.10, got: %f\n", t1.PValue)

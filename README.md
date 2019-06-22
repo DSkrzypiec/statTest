@@ -4,12 +4,16 @@ Package `DSkrzypiec/statTest` implements widely used statistical tests. At first
 
 ## Already implemented tests
 
-* Bootstrap mean equality test (sketch)
+* Bootstrap mean equality test
+* Bootstrap single-sample mean test
+
+Please mind this is work-in-progress stage yet. There may be some changes in already
+implemented parts of the package.
 
 ### In foreseeable future:
 
-* Bootstrap single-sample mean test
 * Kolmogorov-Smirnov test
+* Mann-Whitney U test
 
 
 ## Install
