@@ -3,6 +3,7 @@ package stat
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"testing"
 )
 
@@ -27,13 +28,41 @@ func TestUnitQuantileBasic(t *testing.T) {
 				p, rQuant, goQuant)
 		}
 	}
+}
 
-	if !math.IsNaN(Quantile(x, 2.5)) {
-		t.Errorf("Expected NaN, got: %f \n", Quantile(x, 2.5))
+func TestUnitQuantileEdge(t *testing.T) {
+	wierdX := []float64{math.NaN(), math.Inf(1), 1.0, 5.431}
+	nanRes := Quantile(wierdX, 0.12)
+	if !math.IsNaN(nanRes) {
+		t.Errorf("Expected NaN, got: %f", nanRes)
 	}
 
-	if !math.IsNaN(Quantile(x, -10.0)) {
-		t.Errorf("Expected NaN, got: %f \n", Quantile(x, 2.5))
+	infRes := Quantile(wierdX, 0.99)
+	if !math.IsInf(infRes, 1) {
+		t.Errorf("Expected inf, got: %f", infRes)
+	}
+
+	x := 43.12345
+	constX := []float64{x, x, x, x, x, x, x, x, x, x, x, x}
+	q := make([]float64, 5)
+	q[0] = Quantile(constX, 0.0)
+	q[1] = Quantile(constX, 0.14)
+	q[2] = Quantile(constX, 0.54)
+	q[3] = Quantile(constX, 0.95)
+	q[4] = Quantile(constX, 1.0)
+
+	for i, e := range q {
+		if !closeEnough(x, e, 0.000001) {
+			t.Errorf("Expected 43.12345, got: %f for i = %d\n", e, i)
+		}
+	}
+
+	if !math.IsNaN(Quantile(constX, 2.5)) {
+		t.Errorf("Expected NaN, got: %f \n", Quantile(constX, 2.5))
+	}
+
+	if !math.IsNaN(Quantile(constX, -10.0)) {
+		t.Errorf("Expected NaN, got: %f \n", Quantile(constX, 2.5))
 	}
 }
 
@@ -65,6 +94,20 @@ func BenchmarkQuantile(b *testing.B) {
 		q = Quantile(input, 0.90)
 	}
 	fmt.Sprintf("%f", q)
+}
+
+func BenchmarkQuantiles(b *testing.B) {
+	input, _ := quantileResultsFromR2()
+	p := make([]float64, 100)
+	for i := 0; i < 100; i++ {
+		p[i] = rand.Float64()
+	}
+	var q []float64
+
+	for i := 0; i < b.N; i++ {
+		q = Quantiles(input, p)
+	}
+	fmt.Sprintf("%v", q)
 }
 
 // Function quantileResultsFromR1 returns x slice and its quantiles calculated

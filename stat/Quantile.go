@@ -5,7 +5,9 @@ import (
 	"sort"
 )
 
-// Quantile calculates quantile of rank prob based on given sample x. This
+// Quantile calculates quantile of rank prob based on given sample x.
+// NaN and infinite elements of x are not removed. If they exists in x
+// they will be placed according to sort.Float64Slice function. This
 // implementation is consistent with default implemenatation in function
 // "quantile" in R programming language. Algorithm was described in
 // "Sample Quantiles in Statistical Packages" - Hyndman and Fan (1996) as
@@ -19,7 +21,7 @@ import (
 // 	g(p) = p(n - 1) + 1 - floor{p(n - 1) + 1},
 // 	and 0 <= p <= 1.
 func Quantile(x []float64, prob float64) float64 {
-	if prob < 0.0 || prob > 1.0 {
+	if prob < 0.0 || prob > 1.0 || math.IsNaN(prob) || math.IsInf(prob, 0) {
 		return math.NaN()
 	}
 	newX := sort.Float64Slice(x)
@@ -47,7 +49,7 @@ func Quantiles(x, probs []float64) []float64 {
 	newX.Sort()
 
 	for i, prob := range probs {
-		if prob < 0.0 || prob > 1.0 {
+		if prob < 0.0 || prob > 1.0 || math.IsNaN(prob) || math.IsInf(prob, 0) {
 			quantiles[i] = math.NaN()
 			continue
 		}
