@@ -1,6 +1,7 @@
 package statTest
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 )
@@ -36,6 +37,20 @@ func TestUnitBootstrapMean(t *testing.T) {
 	}
 }
 
+func TestMathBoostrapMeanSingle(t *testing.T) {
+	const n = 10000
+	x1 := make([]float64, n)
+
+	for i := 0; i < n; i++ {
+		x1[i] = rand.Float64() * 55.0
+	}
+
+	for i := 1; i < 60; i++ {
+		tRes := BootstrapMeanSingle(x1, float64(i), 0.05, 100)
+		fmt.Printf("For u0 = %f | P-Value = %f\n", float64(i), tRes.PValue)
+	}
+}
+
 func TestUnitBootstrapMeanSingle(t *testing.T) {
 	const n = 1000
 	x1 := make([]float64, n)
@@ -44,7 +59,7 @@ func TestUnitBootstrapMeanSingle(t *testing.T) {
 		x1[i] = rand.Float64() * 55.0
 	}
 
-	t1 := BootstrapMeanSingle(x1, 31.50, 0.05, 100)
+	t1 := BootstrapMeanSingle(x1, 27.50, 0.05, 100)
 	t2 := BootstrapMeanSingle(x1, 10.0, 0.05, 100)
 
 	if t1.PValue <= 0.10 {
